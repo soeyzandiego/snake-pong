@@ -9,7 +9,12 @@ class SNAKE:
     def draw_snake(self):
         for block in self.body:
             snake_rect = pygame.Rect(block.x * cell_size, block.y * cell_size, cell_size, cell_size)
-            pygame.draw.rect(screen, (255, 255, 255), snake_rect)
+            if block == self.body[0]:
+                pygame.draw.rect(screen, (220, 20, 60), snake_rect)
+            elif block == self.body[len(self.body) - 1]:
+                pygame.draw.rect(screen, (30, 144, 255), snake_rect)
+            else:
+                pygame.draw.rect(screen, (255, 255, 255), snake_rect)
 
     def move_snake(self):
         body_copy = self.body[:-1]
