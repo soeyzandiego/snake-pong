@@ -9,9 +9,10 @@ cell_number = 25
 
 class SNAKE:
     def __init__(self):
-        self.body = [Vector2(14, 10), Vector2(13, 10), Vector2(12, 10)]
+        self.body = [Vector2(14, 13), Vector2(13, 13), Vector2(12, 13)]
         self.direction = Vector2(1, 0)
         self.blue = False
+        self.length = 1
     
     def draw_snake(self):
         for block in self.body:
@@ -39,17 +40,19 @@ class SNAKE:
 
     def add_block(self):
         self.body.insert(0, self.body[0] + self.direction)
+        self.length += 1
 
     def subtract_block(self):
         self.body = self.body[:-1]
+        self.length -= 1
 
     def switch_head(self):
         last_block = self.body[len(self.body) - 1]
         second_last_block = self.body[len(self.body) - 2]
 
-        end_dir = second_last_block - last_block
+        end_dir = second_last_block - last_block    # find the facing direction of the last block
 
-        self.body.reverse()
+        self.body.reverse() # make the opposite head the first in the array
         self.blue = not self.blue
         self.direction = end_dir * -1
           
