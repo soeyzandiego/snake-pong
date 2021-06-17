@@ -126,14 +126,15 @@ class MAIN:
                 self.snake.subtract_block()
 
     def check_lose(self):
-        if self.game_fin:
-            return
-        elif not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
+        if self.game_fin: return
+        
+        if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
             self.game_over()
-        else:
-            for block in self.snake.body[1:]:
+            
+        for block in self.snake.body[1:]:
                 if block == self.snake.body[0]:
                     self.game_over()
+                    break
 
     def game_over(self):
         del self.snake  # delete the current snake
@@ -161,17 +162,20 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT and game.snake.direction.x != 1:
-                game.snake.direction = Vector2(-1, 0)
-            elif event.key == pygame.K_RIGHT and game.snake.direction.x != -1:
-                game.snake.direction = Vector2(1, 0)
-            elif event.key == pygame.K_UP and game.snake.direction.y != 1:
-                    game.snake.direction = Vector2(0, -1)
-            elif event.key == pygame.K_DOWN and game.snake.direction.y != -1:
-                game.snake.direction = Vector2(0, 1)
-
             if event.key == pygame.K_r and game.game_fin:
                 game.reset()
+
+            if not game.game_fin:   # if the game isn't finished, take the snake input
+                if event.key == pygame.K_LEFT and game.snake.direction.x != 1:
+                    game.snake.direction = Vector2(-1, 0)
+                elif event.key == pygame.K_RIGHT and game.snake.direction.x != -1:
+                    game.snake.direction = Vector2(1, 0)
+                elif event.key == pygame.K_UP and game.snake.direction.y != 1:
+                    game.snake.direction = Vector2(0, -1)
+                elif event.key == pygame.K_DOWN and game.snake.direction.y != -1:
+                    game.snake.direction = Vector2(0, 1)
+            
+
         if event.type == SCREEN_UPDATE:
             game.update()
 
