@@ -12,7 +12,7 @@ class SNAKE:
         self.body = [Vector2(14, 13), Vector2(13, 13), Vector2(12, 13)]
         self.direction = Vector2(1, 0)
         self.blue = False
-        self.length = 1
+        self.length = 0
     
     def draw_snake(self):
         for block in self.body:
@@ -83,13 +83,14 @@ class MAIN:
         self.snake = SNAKE()
         self.red_fruit = RED_FRUIT()
         self.blue_fruit = BLUE_FRUIT()
-        self.game_fin = False
+        self.game_over = False
+        self.running = False
 
         if self.blue_fruit.pos == self.red_fruit.pos:
             self.blue_fruit.respawn()
 
     def update(self):
-        if self.game_fin: return  # if game is over, don't update
+        if self.game_over: return  # if game is over, don't update
 
         self.snake.move_snake()
         self.collision()
@@ -98,8 +99,13 @@ class MAIN:
     def draw(self):
         self.red_fruit.draw_fruit()
         self.blue_fruit.draw_fruit()
-        if self.game_fin: return  # if game is over, don't draw snake
+        if self.game_over: return  # if game is over, don't draw snake
         self.snake.draw_snake()
+
+        score = str(self.snake.length)
+        score_surface = score_font.render(score, True, (255, 255, 255))
+        score_rect = score_surface.get_rect(topleft = (15, 10))
+        screen.blit(score_surface, score_rect)
 
     def collect_red(self):
         self.red_fruit.respawn()
@@ -126,30 +132,32 @@ class MAIN:
                 self.snake.subtract_block()
 
     def check_lose(self):
-        if self.game_fin: return
+        if self.game_over: return
         
         if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
-            self.game_over()
+            self.end_game()
             
         for block in self.snake.body[1:]:
                 if block == self.snake.body[0]:
-                    self.game_over()
+                    self.end_game()
                     break
 
-    def game_over(self):
+    def end_game(self):
         del self.snake  # delete the current snake
-        self.game_fin = True
+        self.game_over = True
+        self.snake = SNAKE()
 
     def reset(self):
-        self.snake = SNAKE()
         self.red_fruit.respawn()
         self.blue_fruit.respawn()
-        self.game_fin = False
+        self.game_over = False
 
 pygame.init()
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Snakes")
+
+score_font = pygame.font.Font(None, 50)
 
 game = MAIN()
 
@@ -162,10 +170,10 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r and game.game_fin:
+            if event.key == pygame.K_r and game.game_over:
                 game.reset()
 
-            if not game.game_fin:   # if the game isn't finished, take the snake input
+            if not game.game_over:   # if the game isn't finished, take the snake input
                 if event.key == pygame.K_LEFT and game.snake.direction.x != 1:
                     game.snake.direction = Vector2(-1, 0)
                 elif event.key == pygame.K_RIGHT and game.snake.direction.x != -1:
@@ -175,11 +183,19 @@ while True:
                 elif event.key == pygame.K_DOWN and game.snake.direction.y != -1:
                     game.snake.direction = Vector2(0, 1)
             
+            if not game.running and event.key == pygame.K_RETURN:
+                game.running = True
 
-        if event.type == SCREEN_UPDATE:
+        if event.type == SCREEN_UPDATE and game.running:
             game.update()
 
-    screen.fill((42, 45, 51))
+    bg_color = (255, 154, 173)
+    if game.snake.blue:
+        bg_color = (151, 204, 255)
+    else:
+        bg_color = (255, 154, 173)
+
+    screen.fill(bg_color)
     game.draw()
 
     pygame.display.update()
