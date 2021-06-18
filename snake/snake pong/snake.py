@@ -1,11 +1,11 @@
-import pygame, sys, random
+import pygame, sys, random, os
 from pygame.math import Vector2, Vector3
 
 RED = (220, 20, 60)
 BLUE = (30, 144, 255)
 
-bg_red = Vector3(255, 154, 173)
-bg_blue = Vector3(151, 204, 255)
+bg_red = Vector3(230, 154, 173)
+bg_blue = Vector3(151, 204, 230)
 
 cell_size = 35
 cell_number = 25
@@ -94,9 +94,9 @@ class MAIN:
     def update(self):
         if self.game_over: return  # if game is over, don't update
 
-        self.snake.move_snake()
         self.collision()
         self.check_lose()
+        self.snake.move_snake()
 
     def draw(self):
         self.red_fruit.draw_fruit()
@@ -168,7 +168,7 @@ pygame.display.set_caption("Snakes")
 
 # UI elements
 score_font = pygame.font.Font(None, 75)
-title_font = pygame.font.Font(None, 125)
+title_font = pygame.font.Font(os.path.join("Assets", "Fonts", "BroadwayFlat.ttf"), 125)
 
 game = MAIN()
 
@@ -204,7 +204,6 @@ while True:
             if event.key == pygame.K_RETURN:
                 if game.menu:
                     game.menu = False
-                    game.stopped = False
                 elif game.stopped:
                     game.stopped = False
 
