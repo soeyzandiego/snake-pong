@@ -4,11 +4,14 @@ from pygame.math import Vector2, Vector3
 RED = (220, 20, 60)
 BLUE = (30, 144, 255)
 
-bg_red = Vector3(230, 154, 173)
-bg_blue = Vector3(151, 204, 230)
+BG_RED = Vector3(230, 154, 173)
+BG_BLUE = Vector3(151, 204, 230)
 
-cell_size = 35
-cell_number = 25
+GRASS_RED = (222, 149, 167)
+GRASS_BLUE = (146, 197, 222)
+
+cell_size = 40
+cell_number = 20
 
 class SNAKE:
     def __init__(self):
@@ -73,7 +76,9 @@ class BLUE_FRUIT:
 
     def draw_fruit(self):
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
-        pygame.draw.rect(screen, BLUE, fruit_rect)
+        sprite = pygame.image.load(os.path.join("assets/sprites/blue_fruit.png"))
+        screen.blit(sprite, fruit_rect)
+        #pygame.draw.rect(screen, BLUE, fruit_rect)     Grid square
 
     def respawn(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
@@ -99,6 +104,7 @@ class MAIN:
         self.snake.move_snake()
 
     def draw(self):
+        self.draw_grass()
         self.red_fruit.draw_fruit()
         self.blue_fruit.draw_fruit()
 
@@ -109,6 +115,26 @@ class MAIN:
 
         if self.game_over: return  # if game is over, don't draw snake
         self.snake.draw_snake()
+
+    def draw_grass(self):
+        grass_color = GRASS_RED
+
+        if self.snake.blue:
+            grass_color = GRASS_BLUE
+        else:
+            grass_color = GRASS_RED
+
+        for row in range(cell_number):
+            if row % 2 == 0:
+                for col in range(cell_number):
+                    if col % 2 == 0:
+                        grass_rect = pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size)
+                        pygame.draw.rect(screen, grass_color, grass_rect)
+            else:
+                for col in range(cell_number):
+                    if col % 2 != 0:
+                        grass_rect = pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size)
+                        pygame.draw.rect(screen, grass_color, grass_rect)
 
     def collect_red(self):
         self.snake.switch_head()
@@ -164,11 +190,11 @@ class MAIN:
 pygame.init()
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
 clock = pygame.time.Clock()
-pygame.display.set_caption("Snakes")
+pygame.display.set_caption("Snake Pong")
 
 # UI elements
-score_font = pygame.font.Font(None, 75)
-title_font = pygame.font.Font(os.path.join("Assets", "Fonts", "BroadwayFlat.ttf"), 125)
+score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 75)
+title_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 125)
 
 game = MAIN()
 
@@ -218,12 +244,12 @@ while True:
     if mix_amount >= 1:
         mix_amount -= fade_speed
     
-    bg_color = bg_red
+    bg_color = BG_RED
     if game.snake.blue:
-        lerp = pygame.Vector3.lerp(bg_red, bg_blue, mix_amount)
+        lerp = pygame.Vector3.lerp(BG_RED, BG_BLUE, mix_amount)
         bg_color = (lerp.x, lerp.y, lerp.z)
     else:
-        lerp = pygame.Vector3.lerp(bg_blue, bg_red, mix_amount)
+        lerp = pygame.Vector3.lerp(BG_BLUE, BG_RED, mix_amount)
         bg_color = (lerp.x, lerp.y, lerp.z)
 
     screen.fill(bg_color)
