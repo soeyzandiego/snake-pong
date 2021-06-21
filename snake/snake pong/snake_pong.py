@@ -1,4 +1,6 @@
 import pygame, sys, random, os
+from pygame import surface
+from pygame.constants import MOUSEMOTION
 from pygame.math import Vector2, Vector3
 
 RED = (220, 20, 60)
@@ -15,7 +17,8 @@ cell_number = 20
 
 class SNAKE:
     def __init__(self):
-        self.body = [Vector2(14, 12), Vector2(13, 12), Vector2(12, 12)]
+        middle = cell_number / 2
+        self.body = [Vector2(middle + 1, middle), Vector2(middle, middle), Vector2(middle - 1, middle)]
         self.direction = Vector2(1, 0)
         self.blue = False
     
@@ -76,9 +79,9 @@ class BLUE_FRUIT:
 
     def draw_fruit(self):
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
-        sprite = pygame.image.load(os.path.join("assets/sprites/blue_fruit.png"))
-        screen.blit(sprite, fruit_rect)
-        #pygame.draw.rect(screen, BLUE, fruit_rect)     Grid square
+        #sprite = pygame.image.load(os.path.join("assets/sprites/blue_fruit.png"))
+        #screen.blit(sprite, fruit_rect)
+        pygame.draw.rect(screen, BLUE, fruit_rect)     # Grid square
 
     def respawn(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
@@ -187,6 +190,64 @@ class MAIN:
         self.stopped = True
         self.game_over = False
 
+class BUTTON:
+    def __init__(self, pos, text):
+        self.pos = pos
+        self.text = text
+        self.image = blue_button
+
+        self.draw()
+
+    def draw(self):
+        rect = self.image.get_rect(center = self.pos)
+        self.rect = rect
+        screen.blit(self.image, rect)
+
+        if self.hovering():
+            self.image = red_button
+        else:
+            self.image = blue_button
+
+
+        font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 50)
+        text_surf = font.render(self.text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center = self.pos)
+        screen.blit(text_surf, text_rect)
+
+    def change_image(self, image):
+        self.image = image
+
+    def hovering(self):
+        pos = pygame.mouse.get_pos()
+        if pos[0] > self.rect.left and pos[0] < self.rect.right:
+            if pos[1] > self.rect.top and pos[1] < self.rect.bottom:
+                return True
+
+        return False     
+
+class TITLE_SCREEN:
+    def __init__(self):
+        self.draw()
+
+    def draw(self):
+        halfway_point = (cell_size * cell_number) / 2
+
+        button_pos = Vector2(halfway_point, halfway_point + 50)
+        self.button = BUTTON(button_pos, "Play")
+
+        if self.button.hovering():
+            screen.fill(BG_BLUE)
+        else:
+            screen.fill(BG_RED)
+
+        title_surface = title_font.render("Snake Pong", True, (255, 255, 255))
+        title_rect = title_surface.get_rect(center = (halfway_point, halfway_point - 55))
+        screen.blit(title_surface, title_rect)
+
+        self.button.draw()
+
+  
+
 pygame.init()
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
 clock = pygame.time.Clock()
@@ -195,18 +256,16 @@ pygame.display.set_caption("Snake Pong")
 # UI elements
 score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 75)
 title_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 125)
+blue_button = pygame.image.load(os.path.join("assets", "sprites", "blue_button.png"))
+red_button = pygame.image.load(os.path.join("assets", "sprites", "red_button.png"))
 
+# Instances
 game = MAIN()
+menu = TITLE_SCREEN()
 
 # snake movement control
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE, 140)
-
-def title_screen():
-    title_surface = title_font.render("Snake Pong", True, (255, 255, 255))
-    title_rect = title_surface.get_rect(center = (437.5, 400))
-    screen.blit(title_surface, title_rect)
-
 
 while True:
     for event in pygame.event.get(): 
@@ -235,7 +294,6 @@ while True:
 
         if event.type == SCREEN_UPDATE and not game.stopped:
             game.update()
-
     
     fade_speed = 0.01
     mix_amount = 1
@@ -255,7 +313,7 @@ while True:
     screen.fill(bg_color)
 
     if game.menu:
-        title_screen()     
+        menu.draw()
     else:
         game.draw()    
 
