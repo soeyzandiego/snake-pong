@@ -1,6 +1,4 @@
 import pygame, sys, random, os
-from pygame import surface
-from pygame.constants import MOUSEMOTION
 from pygame.math import Vector2, Vector3
 
 RED = (220, 20, 60)
@@ -14,6 +12,8 @@ GRASS_BLUE = (146, 197, 222)
 
 cell_size = 40
 cell_number = 20
+
+HALFWAY_POINT = (cell_size * cell_number) / 2
 
 class SNAKE:
     def __init__(self):
@@ -230,9 +230,7 @@ class TITLE_SCREEN:
         self.draw()
 
     def draw(self):
-        halfway_point = (cell_size * cell_number) / 2
-
-        button_pos = Vector2(halfway_point, halfway_point + 50)
+        button_pos = Vector2(HALFWAY_POINT, HALFWAY_POINT + 50)
         self.button = BUTTON(button_pos, "Play")
 
         if self.button.hovering():
@@ -241,12 +239,23 @@ class TITLE_SCREEN:
             screen.fill(BG_RED)
 
         title_surface = title_font.render("Snake Pong", True, (255, 255, 255))
-        title_rect = title_surface.get_rect(center = (halfway_point, halfway_point - 55))
+        title_rect = title_surface.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 55))
         screen.blit(title_surface, title_rect)
 
         self.button.draw()
 
-  
+class END_SCREEN:
+    def __init__(self):
+        pass
+    
+    def draw(self, score):
+        text_surf = end_score_font.render(score, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center = ((HALFWAY_POINT, HALFWAY_POINT - 40)))
+        screen.blit(text_surf, text_rect)
+
+        restart_surf = end_text_font.render("Press R to restart", True, (208, 138, 158))
+        restart_rect = restart_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 50))
+        screen.blit(restart_surf, restart_rect)
 
 pygame.init()
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
@@ -256,22 +265,30 @@ pygame.display.set_caption("Snake Pong")
 # UI elements
 score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 75)
 title_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 125)
+end_score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 150)
+end_text_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 40)
 blue_button = pygame.image.load(os.path.join("assets", "sprites", "blue_button.png"))
 red_button = pygame.image.load(os.path.join("assets", "sprites", "red_button.png"))
 
 # Instances
 game = MAIN()
 menu = TITLE_SCREEN()
+end_screen = END_SCREEN()
 
-# snake movement control
+# Snake movement control
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE, 140)
 
 while True:
+    delta = pygame.time.Clock().get_time()
+
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if game.menu and menu.button.hovering():
+                game.menu = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r and game.game_over:
                 game.reset()
@@ -298,9 +315,9 @@ while True:
     fade_speed = 0.01
     mix_amount = 1
     if mix_amount <= 0:
-        mix_amount += fade_speed
+        mix_amount += fade_speed * delta
     if mix_amount >= 1:
-        mix_amount -= fade_speed
+        mix_amount -= fade_speed * delta
     
     bg_color = BG_RED
     if game.snake.blue:
@@ -314,6 +331,8 @@ while True:
 
     if game.menu:
         menu.draw()
+    elif game.game_over:
+        end_screen.draw(str(game.score))
     else:
         game.draw()    
 
