@@ -7,8 +7,8 @@ BLUE = (30, 144, 255)
 BG_RED = Vector3(230, 154, 173)
 BG_BLUE = Vector3(151, 204, 230)
 
-GRASS_RED = (222, 149, 167)
-GRASS_BLUE = (146, 197, 222)
+GRASS_RED = Vector3(222, 149, 167)
+GRASS_BLUE = Vector3(146, 197, 222)
 
 cell_size = 40
 cell_number = 20
@@ -106,8 +106,8 @@ class MAIN:
         self.check_lose()
         self.snake.move_snake()
 
-    def draw(self):
-        self.draw_grass()
+    def draw(self, mix_amount):
+        self.draw_grass(mix_amount)
         self.red_fruit.draw_fruit()
         self.blue_fruit.draw_fruit()
 
@@ -119,13 +119,11 @@ class MAIN:
         if self.game_over: return  # if game is over, don't draw snake
         self.snake.draw_snake()
 
-    def draw_grass(self):
+    def draw_grass(self, mix_amount):
         grass_color = GRASS_RED
 
-        if self.snake.blue:
-            grass_color = GRASS_BLUE
-        else:
-            grass_color = GRASS_RED
+        lerp = pygame.Vector3.lerp(GRASS_RED, GRASS_BLUE, mix_amount)
+        grass_color = (lerp.x, lerp.y, lerp.z)
 
         for row in range(cell_number):
             if row % 2 == 0:
@@ -257,6 +255,9 @@ class END_SCREEN:
         restart_rect = restart_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 50))
         screen.blit(restart_surf, restart_rect)
 
+def clamp(num, min_value, max_value):
+   return max(min(num, max_value), min_value)
+
 pygame.init()
 screen = pygame.display.set_mode((cell_number * cell_size, cell_number * cell_size))
 clock = pygame.time.Clock()
@@ -278,6 +279,12 @@ end_screen = END_SCREEN()
 # Snake movement control
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE, 140)
+
+# Background fade
+COLOR_FADE = pygame.USEREVENT
+fading = False
+mix_amount = 0
+bg_color = BG_RED
 
 while True:
     delta = pygame.time.Clock().get_time()
@@ -312,19 +319,33 @@ while True:
         if event.type == SCREEN_UPDATE and not game.stopped:
             game.update()
     
-    fade_speed = 0.01
-    mix_amount = 1
-    if mix_amount <= 0:
-        mix_amount += fade_speed * delta
-    if mix_amount >= 1:
-        mix_amount -= fade_speed * delta
+    fade_speed = 0.05
+
+    if fading:
+        if game.snake.blue:
+            mix_amount += fade_speed
+        elif not game.snake.blue:
+            mix_amount -= fade_speed
     
-    bg_color = BG_RED
+    mix_amount = clamp(mix_amount, 0, 1.0)
+
     if game.snake.blue:
-        lerp = pygame.Vector3.lerp(BG_RED, BG_BLUE, mix_amount)
-        bg_color = (lerp.x, lerp.y, lerp.z)
+        if bg_color != BG_BLUE:
+            fading = True
+        else:
+            fading = False
+            mix_amount = 1
+    elif not game.snake.blue:
+        if bg_color != BG_RED:
+            fading = True
+        elif bg_color == BG_RED:
+            fading = False
+            mix_amount = 0
+
+    lerp = pygame.Vector3.lerp(BG_RED, BG_BLUE, mix_amount)
+    if game.game_over:
+        bg_color = BG_RED
     else:
-        lerp = pygame.Vector3.lerp(BG_BLUE, BG_RED, mix_amount)
         bg_color = (lerp.x, lerp.y, lerp.z)
 
     screen.fill(bg_color)
@@ -334,7 +355,7 @@ while True:
     elif game.game_over:
         end_screen.draw(str(game.score))
     else:
-        game.draw()    
+        game.draw(mix_amount)
 
     pygame.display.update()
     clock.tick(60)
