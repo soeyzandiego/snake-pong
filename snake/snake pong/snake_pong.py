@@ -1,5 +1,6 @@
 import pygame, sys, random, os
 from pygame.math import Vector2, Vector3
+from pygame import mixer
 
 RED = (220, 20, 60)
 BLUE = (30, 144, 255)
@@ -48,9 +49,11 @@ class SNAKE:
 
     def add_block(self):
         self.body.insert(0, self.body[0] + self.direction)
+        eat_sound.play()
 
     def subtract_block(self):
         self.body = self.body[:-1]
+        wrong_sound.play()
 
     def switch_head(self):
         last_block = self.body[len(self.body) - 1]
@@ -60,7 +63,7 @@ class SNAKE:
 
         self.body.reverse() # make the opposite head the first in the array
         self.blue = not self.blue
-        self.direction = end_dir * -1
+        self.direction = end_dir * -1 # bounce back
           
 class RED_FRUIT:
     def __init__(self,):
@@ -95,6 +98,7 @@ class MAIN:
         self.stopped = True
         self.menu = True
         self.score = 0
+        self.h_score = 0
 
         if self.blue_fruit.pos == self.red_fruit.pos:
             self.blue_fruit.respawn()
@@ -169,8 +173,13 @@ class MAIN:
         if self.game_over: return
         
         if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
+            wall_sound.play()
             self.end_game()
-            
+
+        if self.score < 0:
+            self.end_game()
+            self.score = 0
+        
         for block in self.snake.body[1:]:
                 if block == self.snake.body[0]:
                     self.end_game()
@@ -180,6 +189,9 @@ class MAIN:
         del self.snake  # delete the current snake
         self.game_over = True
         self.snake = SNAKE()
+
+        if self.score > self.h_score:
+            self.h_score = self.score
 
     def reset(self):
         self.red_fruit.respawn()
@@ -246,7 +258,7 @@ class END_SCREEN:
     def __init__(self):
         pass
     
-    def draw(self, score):
+    def draw(self, score, h_score):
         text_surf = end_score_font.render(score, True, (255, 255, 255))
         text_rect = text_surf.get_rect(center = ((HALFWAY_POINT, HALFWAY_POINT - 40)))
         screen.blit(text_surf, text_rect)
@@ -254,6 +266,10 @@ class END_SCREEN:
         restart_surf = end_text_font.render("Press R to restart", True, (208, 138, 158))
         restart_rect = restart_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 50))
         screen.blit(restart_surf, restart_rect)
+
+        h_surf = end_text_font.render(h_score, True, (255, 201, 215))
+        h_rect = h_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 140))
+        screen.blit(h_surf, h_rect)
 
 def clamp(num, min_value, max_value):
    return max(min(num, max_value), min_value)
@@ -270,6 +286,11 @@ end_score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.
 end_text_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 40)
 blue_button = pygame.image.load(os.path.join("assets", "sprites", "blue_button.png"))
 red_button = pygame.image.load(os.path.join("assets", "sprites", "red_button.png"))
+
+# Sound
+eat_sound = mixer.Sound(os.path.join("assets", "sounds", "eat.wav"))
+wall_sound = mixer.Sound(os.path.join("assets", "sounds", "hit_wall.wav"))
+wrong_sound = mixer.Sound(os.path.join("assets", "sounds", "wrong_fruit.wav"))
 
 # Instances
 game = MAIN()
@@ -353,7 +374,7 @@ while True:
     if game.menu:
         menu.draw()
     elif game.game_over:
-        end_screen.draw(str(game.score))
+        end_screen.draw(str(game.score), str(game.h_score))
     else:
         game.draw(mix_amount)
 
