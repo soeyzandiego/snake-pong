@@ -79,18 +79,22 @@ class SNAKE:
         self.direction = end_dir * -1 # bounce back
           
 class RED_FRUIT:
-    def __init__(self,):
+    def __init__(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
 
     def draw_fruit(self):
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
         pygame.draw.rect(screen, RED, fruit_rect)
 
-    def respawn(self):
-        self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+    def respawn(self, snake_body):
+        new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+        for block in snake_body:
+            if new_pos == block:
+                new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+        self.pos = new_pos
 
 class BLUE_FRUIT:
-    def __init__(self,):
+    def __init__(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
 
     def draw_fruit(self):
@@ -99,8 +103,11 @@ class BLUE_FRUIT:
         #screen.blit(sprite, fruit_rect)
         pygame.draw.rect(screen, BLUE, fruit_rect)     # Grid square
 
-    def respawn(self):
+    def respawn(self, snake_body):
         new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+        for block in snake_body:
+            if new_pos == block:
+                new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
         self.pos = new_pos
 
 class MAIN:
@@ -114,7 +121,7 @@ class MAIN:
         self.score = 0
 
         if self.blue_fruit.pos == self.red_fruit.pos:
-            self.blue_fruit.respawn()
+            self.blue_fruit.respawn(self.snake.body)
 
     def update(self):
         if self.game_over: return  # if game is over, don't update
@@ -156,12 +163,12 @@ class MAIN:
 
     def collect_red(self):
         self.snake.switch_head()
-        self.red_fruit.respawn()
+        self.red_fruit.respawn(self.snake.body)
         self.snake.add_block()
 
     def collect_blue(self):
         self.snake.switch_head()
-        self.blue_fruit.respawn()
+        self.blue_fruit.respawn(self.snake.body)
         self.snake.add_block()
     
     def collision(self):
@@ -170,7 +177,7 @@ class MAIN:
                 self.collect_red()
                 self.score += 1
             else:
-                self.red_fruit.respawn()
+                self.red_fruit.respawn(self.snake.body)
                 self.snake.subtract_block()
                 self.score -= 1
         if self.blue_fruit.pos == self.snake.body[0]:
@@ -178,7 +185,7 @@ class MAIN:
                 self.collect_blue()
                 self.score += 1
             else:
-                self.blue_fruit.respawn()
+                self.blue_fruit.respawn(self.snake.body)
                 self.snake.subtract_block()
                 self.score -=1
 
@@ -196,6 +203,7 @@ class MAIN:
         for block in self.snake.body[1:]:
                 if block == self.snake.body[0]:
                     self.end_game()
+                    wrong_sound.play()
                     break
 
     def end_game(self):
@@ -207,8 +215,8 @@ class MAIN:
             player_data["h_score"] = self.score
 
     def reset(self):
-        self.red_fruit.respawn()
-        self.blue_fruit.respawn()
+        self.red_fruit.respawn(self.snake.body)
+        self.blue_fruit.respawn(self.snake.body)
         self.score = 0
         self.stopped = True
         self.game_over = False
