@@ -1,4 +1,4 @@
-import pygame, sys, random, os
+import pygame, sys, random, os, json
 from pygame.math import Vector2, Vector3
 from pygame import mixer
 
@@ -15,6 +15,19 @@ cell_size = 40
 cell_number = 20
 
 HALFWAY_POINT = (cell_size * cell_number) / 2
+
+# Player Data
+player_data = {
+    'h_score' : 0,
+    'sfx' : True,
+    'music' : True
+}
+
+try:
+    with open('player_data.txt') as data_file:
+        player_data = json.load(data_file)
+except:
+    print("No player data file created")
 
 class SNAKE:
     def __init__(self):
@@ -87,7 +100,8 @@ class BLUE_FRUIT:
         pygame.draw.rect(screen, BLUE, fruit_rect)     # Grid square
 
     def respawn(self):
-        self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+        new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
+        self.pos = new_pos
 
 class MAIN:
     def __init__(self):
@@ -98,7 +112,6 @@ class MAIN:
         self.stopped = True
         self.menu = True
         self.score = 0
-        self.h_score = 0
 
         if self.blue_fruit.pos == self.red_fruit.pos:
             self.blue_fruit.respawn()
@@ -190,8 +203,8 @@ class MAIN:
         self.game_over = True
         self.snake = SNAKE()
 
-        if self.score > self.h_score:
-            self.h_score = self.score
+        if self.score > player_data["h_score"]:
+            player_data["h_score"] = self.score
 
     def reset(self):
         self.red_fruit.respawn()
@@ -258,7 +271,7 @@ class END_SCREEN:
     def __init__(self):
         pass
     
-    def draw(self, score, h_score):
+    def draw(self, score):
         text_surf = end_score_font.render(score, True, (255, 255, 255))
         text_rect = text_surf.get_rect(center = ((HALFWAY_POINT, HALFWAY_POINT - 40)))
         screen.blit(text_surf, text_rect)
@@ -267,7 +280,7 @@ class END_SCREEN:
         restart_rect = restart_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 50))
         screen.blit(restart_surf, restart_rect)
 
-        h_surf = end_text_font.render(h_score, True, (255, 201, 215))
+        h_surf = end_text_font.render(f'{player_data["h_score"]}', True, (255, 201, 215))
         h_rect = h_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 140))
         screen.blit(h_surf, h_rect)
 
@@ -312,6 +325,9 @@ while True:
 
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT:
+            with open('player_data.txt', 'w') as data_file:
+                json.dump(player_data, data_file)
+
             pygame.quit()
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -374,7 +390,7 @@ while True:
     if game.menu:
         menu.draw()
     elif game.game_over:
-        end_screen.draw(str(game.score), str(game.h_score))
+        end_screen.draw(str(game.score))
     else:
         game.draw(mix_amount)
 
