@@ -1,1 +1,1 @@
-{"h_score": 33, "sfx": true, "music": true}
+{"h_score": 17, "sfx": false, "music": true}

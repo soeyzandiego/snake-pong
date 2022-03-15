@@ -62,11 +62,10 @@ class SNAKE:
 
     def add_block(self):
         self.body.insert(0, self.body[0] + self.direction)
-        eat_sound.play()
 
     def subtract_block(self):
         self.body = self.body[:-1]
-        wrong_sound.play()
+        sfx_channel.play(wrong_sound)
 
     def switch_head(self):
         last_block = self.body[len(self.body) - 1]
@@ -118,6 +117,7 @@ class MAIN:
         self.game_over = False
         self.stopped = True
         self.menu = True
+        self.settings = False
         self.score = 0
 
         if self.blue_fruit.pos == self.red_fruit.pos:
@@ -165,12 +165,14 @@ class MAIN:
         self.snake.switch_head()
         self.red_fruit.respawn(self.snake.body)
         self.snake.add_block()
+        sfx_channel.play(eat_sound)
 
     def collect_blue(self):
         self.snake.switch_head()
         self.blue_fruit.respawn(self.snake.body)
         self.snake.add_block()
-    
+        sfx_channel.play(eat_sound2)
+
     def collision(self):
         if self.red_fruit.pos == self.snake.body[0]:
             if not self.snake.blue:
@@ -193,7 +195,7 @@ class MAIN:
         if self.game_over: return
         
         if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
-            wall_sound.play()
+            sfx_channel.play(wall_sound)
             self.end_game()
 
         if self.score < 0:
@@ -203,7 +205,7 @@ class MAIN:
         for block in self.snake.body[1:]:
                 if block == self.snake.body[0]:
                     self.end_game()
-                    wrong_sound.play()
+                    sfx_channel.play(wrong_sound)
                     break
 
     def end_game(self):
@@ -222,31 +224,32 @@ class MAIN:
         self.game_over = False
 
 class BUTTON:
-    def __init__(self, pos, text):
+    def __init__(self, pos, text, text_size, img, hover_img):
         self.pos = pos
         self.text = text
-        self.image = blue_button
+        self.text_size = text_size
+        self.img = img
+        self.hover_img = hover_img
+
+        self.cur_img = self.img
 
         self.draw()
 
     def draw(self):
-        rect = self.image.get_rect(center = self.pos)
+        rect = self.cur_img.get_rect(center = self.pos)
         self.rect = rect
-        screen.blit(self.image, rect)
+        screen.blit(self.cur_img, rect)
 
         if self.hovering():
-            self.image = red_button
+            self.cur_img = self.hover_img
         else:
-            self.image = blue_button
+            self.cur_img = self.img
 
 
-        font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 50)
+        font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), self.text_size)
         text_surf = font.render(self.text, True, (255, 255, 255))
         text_rect = text_surf.get_rect(center = self.pos)
         screen.blit(text_surf, text_rect)
-
-    def change_image(self, image):
-        self.image = image
 
     def hovering(self):
         pos = pygame.mouse.get_pos()
@@ -260,9 +263,20 @@ class TITLE_SCREEN:
     def __init__(self):
         self.draw()
 
+        if player_data["music"]:
+            mixer.music.play(-1)
+        else:
+            mixer.music.stop()
+        if player_data["sfx"]:
+            sfx_channel.set_volume(1)
+        else:
+            sfx_channel.set_volume(0)
+
     def draw(self):
-        button_pos = Vector2(HALFWAY_POINT, HALFWAY_POINT + 50)
-        self.button = BUTTON(button_pos, "Play")
+        button_pos = Vector2(HALFWAY_POINT, HALFWAY_POINT + 25)
+        self.button = BUTTON(button_pos, "Play", 50, blue_button, red_button)
+
+        self.s_button = BUTTON(button_pos + (0, 80), "Settings", 35, small_button, small_button_h)
 
         if self.button.hovering():
             screen.fill(BG_BLUE)
@@ -270,10 +284,11 @@ class TITLE_SCREEN:
             screen.fill(BG_RED)
 
         title_surface = title_font.render("Snake Pong", True, (255, 255, 255))
-        title_rect = title_surface.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 55))
+        title_rect = title_surface.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 75))
         screen.blit(title_surface, title_rect)
 
         self.button.draw()
+        self.s_button.draw()
 
 class END_SCREEN:
     def __init__(self):
@@ -288,9 +303,36 @@ class END_SCREEN:
         restart_rect = restart_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 50))
         screen.blit(restart_surf, restart_rect)
 
+        menu_surf = end_text_font.render("Enter to return to menu", True, (208, 138, 158))
+        menu_rect = menu_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT + 100))
+        screen.blit(menu_surf, menu_rect)
+
         h_surf = end_text_font.render(f'{player_data["h_score"]}', True, (255, 201, 215))
         h_rect = h_surf.get_rect(center = (HALFWAY_POINT, HALFWAY_POINT - 140))
         screen.blit(h_surf, h_rect)
+
+class SETTINGS:
+    def __init__(self):
+        pass
+
+    def draw(self):
+        button_pos = Vector2(HALFWAY_POINT, HALFWAY_POINT - 85)
+        music_txt = f'Music: {self.bool_to_text(player_data["music"])}'
+        self.m_button = BUTTON(button_pos, music_txt, 50, blue_button, blue_button_h)
+        self.m_button.draw()
+
+        sfx_text = f'SFX: {self.bool_to_text(player_data["sfx"])}'
+        self.fx_button = BUTTON(button_pos + (0, 100), sfx_text, 50, blue_button, blue_button_h)
+        self.fx_button.draw()
+
+        self.b_button = BUTTON(button_pos + (0, 300), "Back", 35, small_button, small_button_h)
+        self.b_button.draw()
+
+    def bool_to_text(self, bool):
+        if bool:
+            return "On"
+        else:
+            return "Off"
 
 def clamp(num, min_value, max_value):
    return max(min(num, max_value), min_value)
@@ -307,16 +349,23 @@ end_score_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.
 end_text_font = pygame.font.Font(os.path.join("assets", "fonts", "BroadwayFlat.ttf"), 40)
 blue_button = pygame.image.load(os.path.join("assets", "sprites", "blue_button.png"))
 red_button = pygame.image.load(os.path.join("assets", "sprites", "red_button.png"))
+blue_button_h = pygame.image.load(os.path.join("assets", "sprites", "blue_button_h.png"))
+small_button = pygame.image.load(os.path.join("assets", "sprites", "small_button.png"))
+small_button_h = pygame.image.load(os.path.join("assets", "sprites", "small_button_h.png"))
 
 # Sound
 eat_sound = mixer.Sound(os.path.join("assets", "sounds", "eat.wav"))
+eat_sound2 = mixer.Sound(os.path.join("assets", "sounds", "eat2.wav"))
 wall_sound = mixer.Sound(os.path.join("assets", "sounds", "hit_wall.wav"))
 wrong_sound = mixer.Sound(os.path.join("assets", "sounds", "wrong_fruit.wav"))
+mixer.music.load(os.path.join("assets", "sounds", "snake_pong_theme.wav"))
+sfx_channel = mixer.Channel(0)
 
 # Instances
 game = MAIN()
 menu = TITLE_SCREEN()
 end_screen = END_SCREEN()
+settings = SETTINGS()
 
 # Snake movement control
 SCREEN_UPDATE = pygame.USEREVENT
@@ -339,11 +388,42 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if game.menu and menu.button.hovering():
-                game.menu = False
+            if game.settings:
+                if settings.m_button.hovering():
+                    if player_data["music"]:
+                        mixer.music.stop()
+                        player_data["music"] = False
+                    else:
+                        mixer.music.play(-1)
+                        player_data["music"] = True
+                if settings.fx_button.hovering():
+                    if player_data["sfx"]:
+                        sfx_channel.set_volume(0)
+                        player_data["sfx"] = False
+                    else:
+                        sfx_channel.set_volume(1)
+                        player_data["sfx"] = True
+                if settings.b_button.hovering():
+                    game.menu = True
+                    game.settings = False
+            if game.menu:
+                if menu.button.hovering():
+                    game.menu = False
+                elif menu.s_button.hovering():
+                    game.settings = True
+                    game.menu = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r and game.game_over:
                 game.reset()
+            if event.key == pygame.K_RETURN:
+                if game.menu:
+                    game.menu = False
+                elif game.game_over:
+                    game.reset()
+                    game.menu = True
+                    game.game_over = False
+                elif game.stopped:
+                    game.stopped = False
 
             if not game.game_over:   # if the game isn't finished, take the snake input
                 if event.key == pygame.K_LEFT and game.snake.direction.x != 1:
@@ -355,11 +435,6 @@ while True:
                 elif event.key == pygame.K_DOWN and game.snake.direction.y != -1:
                     game.snake.direction = Vector2(0, 1)
             
-            if event.key == pygame.K_RETURN:
-                if game.menu:
-                    game.menu = False
-                elif game.stopped:
-                    game.stopped = False
 
         if event.type == SCREEN_UPDATE and not game.stopped:
             game.update()
@@ -394,9 +469,11 @@ while True:
         bg_color = (lerp.x, lerp.y, lerp.z)
 
     screen.fill(bg_color)
-
+    
     if game.menu:
         menu.draw()
+    elif game.settings:
+        settings.draw()
     elif game.game_over:
         end_screen.draw(str(game.score))
     else:
