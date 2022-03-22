@@ -24,7 +24,7 @@ player_data = {
 }
 
 try:
-    with open('player_data.txt') as data_file:
+    with open('player_data.json') as data_file:
         player_data = json.load(data_file)
 except:
     print("No player data file created")
@@ -98,8 +98,6 @@ class BLUE_FRUIT:
 
     def draw_fruit(self):
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
-        #sprite = pygame.image.load(os.path.join("assets/sprites/blue_fruit.png"))
-        #screen.blit(sprite, fruit_rect)
         pygame.draw.rect(screen, BLUE, fruit_rect)     # Grid square
 
     def respawn(self, snake_body):
@@ -382,7 +380,7 @@ while True:
 
     for event in pygame.event.get(): 
         if event.type == pygame.QUIT:
-            with open('player_data.txt', 'w') as data_file:
+            with open('player_data.json', 'w') as data_file:
                 json.dump(player_data, data_file)
 
             pygame.quit()
