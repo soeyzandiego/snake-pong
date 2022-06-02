@@ -25,6 +25,7 @@ player_data = {
     'music' : True
 }
 
+# Open json file
 try:
     with open('player_data.json') as data_file:
         # set game settings from json file
@@ -34,8 +35,7 @@ except:
 
 class SNAKE:
     def __init__(self):
-        # find middle cell of grid
-        middle = cell_number / 2
+        middle = cell_number / 2    # find middle cell of grid
         self.body = [Vector2(middle + 1, middle), Vector2(middle, middle), Vector2(middle - 1, middle)]
         self.direction = Vector2(1, 0)
         self.blue = False
@@ -188,6 +188,7 @@ class MAIN:
 
     def collision(self):
         if self.red_fruit.pos == self.snake.body[0]:
+            # TODO collect methods should be used regardless of whether the color matches--collect() checks for correct color
             if not self.snake.blue:
                 self.collect_red()
             else:
@@ -383,10 +384,10 @@ settings = SETTINGS()
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE, 140)
 
-# Background Fade
+# Background fade
 fading = False
 mix_amount = 0
-bg_color = BG_RED
+bg_color = BG_RED   # current background color
 
 while True:
     delta = pygame.time.Clock().get_time()
@@ -471,14 +472,21 @@ while True:
             fading = True
         else:
             fading = False
-            mix_amount = 1
+            mix_amount = 1  # set mix_amount to exact integer just in case
     elif not game.snake.blue:
         if bg_color != BG_RED:
             fading = True
         else:
             fading = False
-            mix_amount = 0
+            mix_amount = 0  # set mix_amount to exact integer just in case
 
+    # draws background color, grass tiles are drawn in game.draw()
+    lerp = pygame.Vector3.lerp(BG_RED, BG_BLUE, mix_amount)
+    if game.game_over:
+        bg_color = BG_RED
+    else:
+        bg_color = (lerp.x, lerp.y, lerp.z)
+        
     screen.fill(bg_color)
     
     # draw correct screen
