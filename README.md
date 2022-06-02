@@ -3,6 +3,8 @@ A rendition of the classic computer game, Snake. Made in Python, using the Pygam
 
 There are two heads: one on each end of the snake. Two heads, two fruits. Collect the fruit with the corresponding color to the leading snake head. Each time the correct fruit is collected, the snake grows and the rear head becomes the leading one.
 
+<b>Enter</b> to start, <b>R</b> to reset, <b>Arrow keys</b> to control snake
+
 ### Latest Devlog
 Additions:
   - Music Added

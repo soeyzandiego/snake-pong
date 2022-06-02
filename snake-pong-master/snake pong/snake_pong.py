@@ -1,18 +1,20 @@
+# TODO separate related classes into invidivual scripts
+
 import pygame, sys, random, os, json
 from pygame.math import Vector2, Vector3
 from pygame import mixer
 
+# Global Colors
 RED = (220, 20, 60)
 BLUE = (30, 144, 255)
-
+# bg colors are vector3 to use lerp() func
 BG_RED = Vector3(230, 154, 173)
 BG_BLUE = Vector3(151, 204, 230)
-
 GRASS_RED = Vector3(222, 149, 167)
 GRASS_BLUE = Vector3(146, 197, 222)
 
-cell_size = 40
-cell_number = 20
+cell_size = 40  # pixel size of each grid cell
+cell_number = 20    # number of cells in grid
 
 HALFWAY_POINT = (cell_size * cell_number) / 2
 
@@ -25,12 +27,14 @@ player_data = {
 
 try:
     with open('player_data.json') as data_file:
+        # set game settings from json file
         player_data = json.load(data_file)
 except:
     print("No player data file created")
 
 class SNAKE:
     def __init__(self):
+        # find middle cell of grid
         middle = cell_number / 2
         self.body = [Vector2(middle + 1, middle), Vector2(middle, middle), Vector2(middle - 1, middle)]
         self.direction = Vector2(1, 0)
@@ -40,12 +44,12 @@ class SNAKE:
         for block in self.body:
             snake_rect = pygame.Rect(block.x * cell_size, block.y * cell_size, cell_size, cell_size)
             color = (255, 255, 255)
-            if block == self.body[0]:
+            if block == self.body[0]:   # set leading head color
                 if not self.blue:
                     color = RED
                 else:
                     color = BLUE
-            elif block == self.body[len(self.body) - 1]:
+            elif block == self.body[len(self.body) - 1]:    # set tailing head color
                 if not self.blue:
                     color = BLUE
                 else:      
@@ -56,7 +60,9 @@ class SNAKE:
             pygame.draw.rect(screen, color, snake_rect)
 
     def move_snake(self):
+        # remove the last block
         body_copy = self.body[:-1]
+        # add a new one to the front
         body_copy.insert(0, body_copy[0] + self.direction)
         self.body = body_copy
 
@@ -65,6 +71,7 @@ class SNAKE:
 
     def subtract_block(self):
         self.body = self.body[:-1]
+        self.score -= 1
         sfx_channel.play(wrong_sound)
 
     def switch_head(self):
@@ -75,30 +82,35 @@ class SNAKE:
 
         self.body.reverse() # make the opposite head the first in the array
         self.blue = not self.blue
-        self.direction = end_dir * -1 # bounce back
+        self.direction = end_dir * -1 # flip direction--"bounce back"
           
 class RED_FRUIT:
+    # TODO condense red/blue fruit into one class with color as a parameter
     def __init__(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
 
     def draw_fruit(self):
+        # draw a rectangle at the fruit's grid pos, using the size of the grid cell
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
         pygame.draw.rect(screen, RED, fruit_rect)
 
     def respawn(self, snake_body):
+        # find random coordinate on the grid
         new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
         for block in snake_body:
+            # if the new position is in the snake's body, scrap it and find a new position
             if new_pos == block:
                 new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
         self.pos = new_pos
 
 class BLUE_FRUIT:
+    # TODO condense red/blue fruit into one class with color as a parameter
     def __init__(self):
         self.pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
 
     def draw_fruit(self):
         fruit_rect = pygame.Rect(self.pos.x * cell_size, self.pos.y * cell_size, cell_size, cell_size)
-        pygame.draw.rect(screen, BLUE, fruit_rect)     # Grid square
+        pygame.draw.rect(screen, BLUE, fruit_rect)
 
     def respawn(self, snake_body):
         new_pos = Vector2(random.randint(0, cell_number -1), random.randint(0, cell_number -1))
@@ -144,6 +156,7 @@ class MAIN:
     def draw_grass(self, mix_amount):
         grass_color = GRASS_RED
 
+        # interpolate between red and blue
         lerp = pygame.Vector3.lerp(GRASS_RED, GRASS_BLUE, mix_amount)
         grass_color = (lerp.x, lerp.y, lerp.z)
 
@@ -163,36 +176,35 @@ class MAIN:
         self.snake.switch_head()
         self.red_fruit.respawn(self.snake.body)
         self.snake.add_block()
+        self.score += 1
         sfx_channel.play(eat_sound)
 
     def collect_blue(self):
         self.snake.switch_head()
         self.blue_fruit.respawn(self.snake.body)
         self.snake.add_block()
+        self.score += 1
         sfx_channel.play(eat_sound2)
 
     def collision(self):
         if self.red_fruit.pos == self.snake.body[0]:
             if not self.snake.blue:
                 self.collect_red()
-                self.score += 1
             else:
                 self.red_fruit.respawn(self.snake.body)
                 self.snake.subtract_block()
-                self.score -= 1
         if self.blue_fruit.pos == self.snake.body[0]:
             if self.snake.blue:
                 self.collect_blue()
-                self.score += 1
             else:
                 self.blue_fruit.respawn(self.snake.body)
                 self.snake.subtract_block()
-                self.score -=1
 
     def check_lose(self):
         if self.game_over: return
         
-        if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: # if the snake head isn't between the display size, end the game
+        # if the snake head isn't between the display size, end the game
+        if not 0 <= self.snake.body[0].x < cell_number or not 0 <= self.snake.body[0].y < cell_number: 
             sfx_channel.play(wall_sound)
             self.end_game()
 
@@ -251,6 +263,7 @@ class BUTTON:
 
     def hovering(self):
         pos = pygame.mouse.get_pos()
+        # check if the mouse position is within the boundaries of the button's rect
         if pos[0] > self.rect.left and pos[0] < self.rect.right:
             if pos[1] > self.rect.top and pos[1] < self.rect.bottom:
                 return True
@@ -272,9 +285,9 @@ class TITLE_SCREEN:
 
     def draw(self):
         button_pos = Vector2(HALFWAY_POINT, HALFWAY_POINT + 25)
-        self.button = BUTTON(button_pos, "Play", 50, blue_button, red_button)
+        self.button = BUTTON(button_pos, "Play", 50, blue_button, red_button)   # play button
 
-        self.s_button = BUTTON(button_pos + (0, 80), "Settings", 35, small_button, small_button_h)
+        self.s_button = BUTTON(button_pos + (0, 80), "Settings", 35, small_button, small_button_h)  # settings button
 
         if self.button.hovering():
             screen.fill(BG_BLUE)
@@ -326,6 +339,7 @@ class SETTINGS:
         self.b_button = BUTTON(button_pos + (0, 300), "Back", 35, small_button, small_button_h)
         self.b_button.draw()
 
+    # returns corresponding word for true/false
     def bool_to_text(self, bool):
         if bool:
             return "On"
@@ -365,12 +379,11 @@ menu = TITLE_SCREEN()
 end_screen = END_SCREEN()
 settings = SETTINGS()
 
-# Snake movement control
+# Snake Movement Control
 SCREEN_UPDATE = pygame.USEREVENT
 pygame.time.set_timer(SCREEN_UPDATE, 140)
 
-# Background fade
-COLOR_FADE = pygame.USEREVENT
+# Background Fade
 fading = False
 mix_amount = 0
 bg_color = BG_RED
@@ -385,7 +398,9 @@ while True:
 
             pygame.quit()
             sys.exit()
+        # check for mouse being pressed
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # buttons in settings menu
             if game.settings:
                 if settings.m_button.hovering():
                     if player_data["music"]:
@@ -404,12 +419,14 @@ while True:
                 if settings.b_button.hovering():
                     game.menu = True
                     game.settings = False
+            # buttons in main menu
             if game.menu:
                 if menu.button.hovering():
                     game.menu = False
                 elif menu.s_button.hovering():
                     game.settings = True
                     game.menu = False
+        # check for key presses
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r and game.game_over:
                 game.reset()
@@ -439,6 +456,7 @@ while True:
     
     fade_speed = 0.05
 
+    # use mix amount to interpolate from blue(0) to red (1.0)
     if fading:
         if game.snake.blue:
             mix_amount += fade_speed
@@ -448,6 +466,7 @@ while True:
     mix_amount = clamp(mix_amount, 0, 1.0)
 
     if game.snake.blue:
+        # if the bg color doesn't match the active color, start fading
         if bg_color != BG_BLUE:
             fading = True
         else:
@@ -456,18 +475,13 @@ while True:
     elif not game.snake.blue:
         if bg_color != BG_RED:
             fading = True
-        elif bg_color == BG_RED:
+        else:
             fading = False
             mix_amount = 0
 
-    lerp = pygame.Vector3.lerp(BG_RED, BG_BLUE, mix_amount)
-    if game.game_over:
-        bg_color = BG_RED
-    else:
-        bg_color = (lerp.x, lerp.y, lerp.z)
-
     screen.fill(bg_color)
     
+    # draw correct screen
     if game.menu:
         menu.draw()
     elif game.settings:
